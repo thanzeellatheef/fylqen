@@ -9,10 +9,15 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
-  const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:4000'
+  const configuredApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.trim()
+  const apiUrl = configuredApiUrl || (import.meta.env.DEV ? 'http://localhost:4000' : '')
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
+    if (!apiUrl) {
+      setError('Account services are not configured yet. You can use the PDF tools without an account.')
+      return
+    }
     const form = new FormData(event.currentTarget)
     const payload = {
       name: String(form.get('name') ?? ''),
@@ -53,7 +58,8 @@ export default function AuthPage({ mode }: { mode: AuthMode }) {
               {mode === 'signup' && <label className="field">Full name<input name="name" autoComplete="name" required /></label>}
               <label className="field">Email address<input type="email" name="email" autoComplete="email" required /></label>
               {mode !== 'forgot' && <label className="field">Password<input type="password" name="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} minLength={8} required /></label>}
-              <button className="button button-primary" type="submit">{copy.button}</button>
+              <button className="button button-primary" type="submit" disabled={!apiUrl}>{copy.button}</button>
+              {!apiUrl && <p role="status" style={{ color: '#777487', fontSize: 13, margin: 0 }}>Account services are unavailable until the backend is deployed. PDF tools work without an account.</p>}
               {error && <div className="error-message" role="alert">{error}</div>}
             </form>
           )}
